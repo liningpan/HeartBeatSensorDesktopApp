@@ -10,6 +10,7 @@
 #include <QVector>
 #include <QDateTime>
 #include <QDebug>
+#include <QLCDNumber>
 
 
 QT_CHARTS_BEGIN_NAMESPACE
@@ -20,7 +21,7 @@ QT_CHARTS_END_NAMESPACE
 QT_CHARTS_USE_NAMESPACE
 
 struct InputDataStruct{
-    int bmp;
+    int bpm;
     int raw_value;
 };
 
@@ -30,6 +31,7 @@ class PulseDataReceiver : public QIODevice
 private:
     QXYSeries *m_series;
     QValueAxis *m_axis;
+    QLCDNumber* m_lcd;
     bool newSer;
     int index;
     float viewing_timespan;
@@ -38,7 +40,7 @@ private:
     qint64 writeData(const char * data, qint64 maxSize);
 public:
     explicit PulseDataReceiver(QXYSeries * series, QObject *parent = 0);
-    void newSeries(QXYSeries * series, QValueAxis *x_axis, float timespan);
+    void newSeries(QXYSeries * series, QValueAxis *x_axis, float timespan, QLCDNumber* lcdn);
 };
 
 #endif // PULSEDATARECEIVER_H

@@ -6,14 +6,15 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     pdr(new PulseDataReceiver(0,this)),
-    start(false)
+    start(false),
+    connected(false)
 {
     ui->setupUi(this);
     on_updateButton_clicked();
     //initially disable all input except COM
-    connected=false;
-    setSampleParameterDisable(true);
 
+    //setSampleParameterDisable(true);
+    ui->startButton->setDisabled(true);
     m_chart = new QChart;
     ui->chartView->setChart(m_chart);
 
@@ -22,11 +23,15 @@ MainWindow::MainWindow(QWidget *parent) :
 }
 
 void MainWindow::releaseStart(){
-    setSampleParameterDisable(false);
+    //setSampleParameterDisable(false);
 }
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::updateBpm(int bpm){
+    ui->bpmLCD->display(bpm);
 }
 
 void MainWindow::createNewSeries(){
@@ -48,7 +53,7 @@ void MainWindow::createNewSeries(){
 
     m_chart->setAxisX(x);
     m_chart->setAxisY(y);
-    pdr->newSeries(currentSeries,x, ui->durationBox->value());
+    pdr->newSeries(currentSeries,x, ui->durationBox->value(),ui->bpmLCD);
     currentSeries->attachAxis(x);
     currentSeries->attachAxis(y);
 }
@@ -61,21 +66,27 @@ void MainWindow::on_updateButton_clicked(){
     }
 }
 
-void MainWindow::setSampleParameterDisable(bool disable){
-    ui->sampleRateBox->setDisabled(disable);
-    ui->updateRateBox->setDisabled(disable);
-    ui->durationBox->setDisabled(disable);
-    ui->startButton->setDisabled(disable);
-}
 void MainWindow::on_connectButton_clicked(){
-    int index = ui->COMPortComboBox->currentIndex();
-    pd = new PulseDevice(serialPortList.at(index));
-    connect(pd,SIGNAL(finishRead()),this,SLOT(finishRead()));
-    ui->COMPortComboBox->setDisabled(true);
-    ui->updateButton->setDisabled(true);
-    ui->connectButton->setText("Disconnect");
+    if(!connected){
+        int index = ui->COMPortComboBox->currentIndex();
+        pd = new PulseDevice(serialPortList.at(index));
+        ui->COMPortComboBox->setDisabled(true);
+        ui->updateButton->setDisabled(true);
+        ui->connectButton->setText("Disconnect");
+        ui->startButton->setDisabled(false);
+    } else {
+        if(start){
+            on_startButton_clicked();
+        }
+        delete pd;
+        ui->COMPortComboBox->setDisabled(false);
+        ui->updateButton->setDisabled(false);
+        ui->connectButton->setText("Connect");
+        ui->startButton->setDisabled(true);
+    }
+    connected = !connected;
     //enable everything else
-    setSampleParameterDisable(false);
+    //setSampleParameterDisable(false);
 }
 
 void MainWindow::on_startButton_clicked(){
@@ -92,22 +103,10 @@ void MainWindow::on_startButton_clicked(){
     start = !start;
 }
 
-void MainWindow::on_sampleRateBox_currentIndexChanged(int v){
-    pd->setSampleRate(ui->sampleRateBox->currentIndex());
-}
-
-void MainWindow::on_updateRateBox_currentIndexChanged(int v){
-    pd->setUpdateRate(ui->updateRateBox->currentIndex());
-}
-
 void MainWindow::on_durationBox_valueChanged(int v){
     pd->setDuration(ui->durationBox->value());
 }
 
-void MainWindow::on_powerSwitch_clicked(){
-    pd->togglePower();
-}
-
 void MainWindow::finishRead(){
-    setSampleParameterDisable(false);
+    //setSampleParameterDisable(false);
 }

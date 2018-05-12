@@ -36,7 +36,7 @@ void PulseDevice::timeoutAndListen(){
             if(list.size()<3){
                 continue;
             }
-            ids->bmp = list[0].toInt();
+            ids->bpm = list[0].toInt();
             ids->raw_value = list[2].toInt();
             outputDevice->write((char*)ids,1);
             st = ed;

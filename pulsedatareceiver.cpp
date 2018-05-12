@@ -14,12 +14,13 @@ qint64 PulseDataReceiver::readData(char *data, qint64 maxSize){
 }
 
 
-void PulseDataReceiver::newSeries(QXYSeries * series, QValueAxis *x_axis, float timespan){
+void PulseDataReceiver::newSeries(QXYSeries * series, QValueAxis *x_axis, float timespan,QLCDNumber* lcdn){
     m_series = series;
     m_axis = x_axis;
     newSer = true;
     viewing_timespan = timespan;
     offest = 0;
+    m_lcd = lcdn;
 }
 
 qint64 PulseDataReceiver::writeData(const char *data, qint64 maxSize){
@@ -43,7 +44,8 @@ qint64 PulseDataReceiver::writeData(const char *data, qint64 maxSize){
     m_series->replace(points);
     //update axis
     m_axis->setRange(offest/50.0, offest/50.0 + viewing_timespan);
-    delete data;
+    m_lcd->display(data_i[maxSize-1].bpm);
+    delete data_i;
     return maxSize;
 }
 

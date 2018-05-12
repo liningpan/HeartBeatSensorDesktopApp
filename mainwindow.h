@@ -37,6 +37,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+    void updateBpm(int bpm);
 
 private:
     Ui::MainWindow *ui;
@@ -56,10 +57,7 @@ private slots:
     void on_updateButton_clicked();
     void on_connectButton_clicked();
     void on_startButton_clicked();
-    void on_sampleRateBox_currentIndexChanged(int);
-    void on_updateRateBox_currentIndexChanged(int);
     void on_durationBox_valueChanged(int);
-    void on_powerSwitch_clicked();
     void releaseStart();
 public slots:
     void finishRead();
