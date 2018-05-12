@@ -1,6 +1,8 @@
 #include "pulsedevice.h"
 
-PulseDevice::PulseDevice(QSerialPortInfo serialInfo, QObject* parent):QIODevice(parent)
+PulseDevice::PulseDevice(QSerialPortInfo serialInfo, QObject* parent):QIODevice(parent),
+    st(0),
+    ed(0)
 {
     serialPort = new QSerialPort(serialInfo);
     serialPort->setBaudRate(QSerialPort::Baud115200);
@@ -16,33 +18,43 @@ PulseDevice::PulseDevice(QSerialPortInfo serialInfo, QObject* parent):QIODevice(
 void PulseDevice::timeoutAndListen(){
     //read new data
     qDebug()<<"Ready to read";
-    unsigned char* data = new unsigned char[512];
-    int l = serialPort->read((char*)data, 512);
-//    for(int i = 0 ; i < l ; i ++){
-//        qDebug()<<QString::number(data[i],16)<<endl;
-//    }
-    if(l > 0){
-        outputDevice->write((char*)data,l);
-//        short* nudata = (short*) data;
-//        for(int i = 0 ; i < l/2 ; i ++){
-//            qDebug()<<nudata[i]<<endl;
-//        }
-        byteLeft -= l/2;
-        //qDebug()<<byteLeft<<endl;
+    char* buf = new char[2048];
+    memset(buf,0,2048);
+    int len = serialPort->read(buf,1024);
+    int l = strlen(buf);
+    for(int i = 0; i < l; i++){
+        if(buf[i] == '\n'){
+            //convert
+            qDebug()<<st<<ed;
+            char* data = new char[ed - st + 1];
+            for(int j = st; j < ed; j ++){
+                data[j - st] = cycbuf[j % 512];
+            }data[ed - st] = '\0';
+            qDebug()<<QString(data);
+            QStringList list = QString(data).split(',');
+            InputDataStruct* ids = new InputDataStruct;
+            if(list.size()<3){
+                continue;
+            }
+            ids->bmp = list[0].toInt();
+            ids->raw_value = list[2].toInt();
+            outputDevice->write((char*)ids,1);
+            st = ed;
+        } else {
+            cycbuf[ed%512] = buf[i];
+            //qDebug()<<st<<ed;
+            ed++;
+        }
     }
-    if(byteLeft > 0){
-        timer->start();
-    }else{
-        emit(finishRead());
-    }
+    delete[] buf;
 }
 void PulseDevice::writeCommand(int arg1, int arg2){
-    char* data = new char[5];
-    data[0] = arg1;
-    data[1] = arg2;
-    data[2] = '\n';
-    data[3] = '\0';
-    serialPort->write(data,3);
+//    char* data = new char[5];
+//    data[0] = arg1;
+//    data[1] = arg2;
+//    data[2] = '\n';
+//    data[3] = '\0';
+//    serialPort->write(data,3);
 }
 void PulseDevice::setDevice(QIODevice *outd){
     outputDevice = outd;
@@ -66,13 +78,9 @@ void PulseDevice::setDuration(int value){
 }
 
 void PulseDevice::start(){
-    qDebug()<<duration;
     serialPort->clear();
-    writeCommand(2,duration);
-    qDebug()<<int(1000.0/sampleRate*updateRate);
-    timer->setInterval(int(1000.0/sampleRate*updateRate));
-    timer->setSingleShot(true);
-    byteLeft = duration * sampleRate;
+    timer->setInterval(20);
+    timer->setSingleShot(false);
     timer->start();
 }
 

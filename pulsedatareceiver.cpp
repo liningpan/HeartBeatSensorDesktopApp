@@ -14,22 +14,36 @@ qint64 PulseDataReceiver::readData(char *data, qint64 maxSize){
 }
 
 
-void PulseDataReceiver::newSeries(QXYSeries * series, float inter){
+void PulseDataReceiver::newSeries(QXYSeries * series, QValueAxis *x_axis, float timespan){
     m_series = series;
+    m_axis = x_axis;
     newSer = true;
-    interval = inter;
+    viewing_timespan = timespan;
+    offest = 0;
 }
 
 qint64 PulseDataReceiver::writeData(const char *data, qint64 maxSize){
-    if(newSer){
-        index = 0;
-    }newSer = false;
-    short* s_data = (short*) data;
-    for(int i = 0; i < maxSize/2; i ++){
-        qDebug()<<s_data[i]<<endl;
-        m_series->append(index * interval,s_data[i]);
-        index++;
+    InputDataStruct* data_i = (InputDataStruct*)data;
+    qint64 range = 50;
+    QVector<QPointF> oldPoints = m_series->pointsVector();
+    QVector<QPointF> points;
+    if(oldPoints.count() < range*viewing_timespan) {
+        points = m_series->pointsVector();
+    } else {
+        offest += maxSize;
+        for(int i = maxSize; i < oldPoints.count(); i ++){
+            points.append(QPointF((offest + i - maxSize)/50.0,oldPoints.at(i).y()));
+        }
     }
+
+    qint64 size = points.count();
+    for(int k = 0; k < maxSize; k++){
+        points.append(QPointF((offest + k + size)/50.0,data_i[k].raw_value));
+    }
+    m_series->replace(points);
+    //update axis
+    m_axis->setRange(offest/50.0, offest/50.0 + viewing_timespan);
+    delete data;
     return maxSize;
 }
 

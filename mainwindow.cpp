@@ -5,7 +5,8 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    pdr(new PulseDataReceiver(0,this))
+    pdr(new PulseDataReceiver(0,this)),
+    start(false)
 {
     ui->setupUi(this);
     on_updateButton_clicked();
@@ -31,11 +32,11 @@ MainWindow::~MainWindow()
 void MainWindow::createNewSeries(){
     m_chart->removeAllSeries();
     currentSeries = new QLineSeries(this);
-    pdr->newSeries(currentSeries, 1.0/pd->getSampleRate());
+
     pd->setDevice(pdr);
     x = new QValueAxis(this);
-    x->setRange(0,pd->getDuration());
-    x->setLabelFormat("%.2f");
+    x->setRange(0,ui->durationBox->value());
+    x->setLabelFormat("%.1f");
     x->setTitleText("Time(sec)");
 
     y = new QValueAxis(this);
@@ -47,7 +48,7 @@ void MainWindow::createNewSeries(){
 
     m_chart->setAxisX(x);
     m_chart->setAxisY(y);
-
+    pdr->newSeries(currentSeries,x, ui->durationBox->value());
     currentSeries->attachAxis(x);
     currentSeries->attachAxis(y);
 }
@@ -78,10 +79,17 @@ void MainWindow::on_connectButton_clicked(){
 }
 
 void MainWindow::on_startButton_clicked(){
-    setSampleParameterDisable(true);
-    createNewSeries();
-    timer->start(1000*pd->getDuration());
-    pd->start();
+//    setSampleParameterDisable(true);
+    if(!start){
+        createNewSeries();
+        pd->start();
+        ui->startButton->setText("Stop");
+    }
+    else{
+        pd->stop();
+        ui->startButton->setText("Start");
+    }
+    start = !start;
 }
 
 void MainWindow::on_sampleRateBox_currentIndexChanged(int v){

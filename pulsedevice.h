@@ -6,6 +6,8 @@
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QTimer>
+#include <memory.h>
+#include <cstring>
 #include <QDebug>
 #include "pulsedatareceiver.h"
 
@@ -23,6 +25,9 @@ private:
     int byteLeft;
     bool power;
     bool deviceSet;
+    char cycbuf[512];
+    int st;
+    int ed;
     qint64 readData(char *data, qint64 maxlen){return 0;}
     qint64 writeData(const char *data, qint64 len){return 0;}
 public:

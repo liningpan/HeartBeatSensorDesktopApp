@@ -49,6 +49,7 @@ private:
     QValueAxis* y;
     QChart* m_chart;
     bool connected;
+    bool start;
     void setSampleParameterDisable(bool);
     void createNewSeries();
 private slots:
